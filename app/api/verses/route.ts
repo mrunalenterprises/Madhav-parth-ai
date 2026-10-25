@@ -1,0 +1,5 @@
+import {NextRequest,NextResponse} from "next/server";
+import {createClient} from "@supabase/supabase-js";
+export async function GET(request:NextRequest){const url=process.env.NEXT_PUBLIC_SUPABASE_URL;const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!url||!key)return NextResponse.json({message:"Supabase environment variables are not configured."},{status:503});
+const chapter=Number(request.nextUrl.searchParams.get("chapter"));const verse=Number(request.nextUrl.searchParams.get("verse"));if(!Number.isInteger(chapter)||chapter<1||chapter>18||!Number.isInteger(verse)||verse<1||verse>78)return NextResponse.json({message:"Invalid chapter or verse."},{status:400});
+const supabase=createClient(url,key);const {data,error}=await supabase.from("verses").select("id,chapter,verse,sanskrit,source_reference").eq("chapter",chapter).eq("verse",verse).eq("verified",true).maybeSingle();if(error)return NextResponse.json({message:"Could not load verse."},{status:500});if(!data)return NextResponse.json({message:"This verse is not yet approved for public display."},{status:404});return NextResponse.json({verse:data});}
