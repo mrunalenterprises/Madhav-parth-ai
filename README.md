@@ -21,6 +21,12 @@ Web-first Bhagavad Gita guidance app by Mrunal Technologies Private Limited.
 
 With no approved verses or translations, search, reading, citation retrieval and translation results will be empty or unavailable by design.
 
+## Safety and API smoke checks
+
+The question endpoint routes selected Marathi, Hindi and English self-harm or immediate-danger expressions to a safety response **before** attempting scripture retrieval or requiring database configuration. It does not provide a diagnosis, and keyword screening is not comprehensive. For India, the response points to 112; future releases should localize emergency contacts and undergo expert safety evaluation.
+
+After a production build, run `bash scripts/smoke_api.sh` to check emergency routing and invalid question handling against the locally started server. GitHub Actions runs this smoke test, but **the workflow's passing status must be confirmed in GitHub Actions**.
+
 ## Local development
 
 Requires Node.js 22 and Python 3.12.
