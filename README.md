@@ -35,6 +35,16 @@ npm run dev
 
 Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in local environment or hosting settings. These are public Supabase client values; **never** put `SUPABASE_SERVICE_ROLE_KEY` into client code or the public repository.
 
+## Editorial worksheet and audit
+
+Generate a **blank**, 700-row CSV with every decision set to PENDING (the command refuses to overwrite an existing file):
+
+```bash
+python scripts/create_review_worksheet.py data/staging/editorial_review.csv
+```
+
+Review the output manually. Do **not** import its PENDING rows as approvals. For authorized read-only database audits, run `scripts/audit_corpus.sql` against the project.
+
 ## Scripture editorial workflow
 
 1. Choose an authentic Sanskrit edition and record full bibliographic source, editorial permissions and translation licenses.
