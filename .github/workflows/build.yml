@@ -18,7 +18,7 @@ jobs:
           python-version: '3.12'
       - name: Validate import tooling
         run: python -m unittest discover -s tests -v
-      - name: Install dependencies
+      - name: Audit generated pending worksheet\n        run: |\n          python scripts/create_review_worksheet.py /tmp/madhav-parth-review.csv\n          python scripts/audit_editorial_reviews.py /tmp/madhav-parth-review.csv\n      - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: TypeScript check
         run: npx tsc --noEmit
