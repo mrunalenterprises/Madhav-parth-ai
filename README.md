@@ -13,13 +13,13 @@ Web-first Bhagavad Gita guidance app by Mrunal Technologies Private Limited.
 
 ## User features
 
-- Marathi question input with preliminary Marathi/Hindi/English topic detection. `POST /api/ask` **does not yet generate AI guidance or scripture citations**.
+- Marathi question input with preliminary Marathi/Hindi/English topic detection. `POST /api/ask` now performs **literal word matching** against editorially verified translations and returns up to three citations only after confirming that their Sanskrit verses are also verified. This is **not semantic AI guidance**, and may miss synonyms or return superficially matching references. No fabricated commentary is generated.
 - Chapter browser and verified-only verse reading: `GET /api/verses?chapter=2` or `GET /api/verses?chapter=2&verse=47`.
 - Verified-only Sanskrit substring search: `GET /api/search?q=कर्म` (max 20 results).
 - Verified-only translations with attribution and license: `GET /api/translations?verse_id=BG_02_047&lang=mr` (also `hi`, `en`).
 - Public corpus readiness: `GET /api/corpus-status`.
 
-With no approved verses or translations, search, reading and translation results will be empty or unavailable by design.
+With no approved verses or translations, search, reading, citation retrieval and translation results will be empty or unavailable by design.
 
 ## Local development
 
