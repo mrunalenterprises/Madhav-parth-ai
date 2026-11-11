@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 type Chapter = { number: number; name_sa: string; expected_verses: number };
 type Verse = { id: string; chapter: number; verse: number; sanskrit: string; source_reference: string };
-type CorpusStatus = { expectedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
+type Translation = { content: string; lang: string; source_id: string; license: string };\ntype CorpusStatus = { expectedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
 const EXAMPLES = [
   "मी खूप मेहनत करतो, पण यश मिळत नाही. काय करू?",
   "माझ्या मनात सतत भीती आणि चिंता असते.",
@@ -21,7 +21,7 @@ export default function Home() {
   const [chapterVerses, setChapterVerses] = useState<Verse[]>([]);
   const [chapterMessage, setChapterMessage] = useState("");
   const [chapterBusy, setChapterBusy] = useState(false);
-  const [search, setSearch] = useState("");
+  const [selectedVerse, setSelectedVerse] = useState<string | null>(null);\n  const [translationLang, setTranslationLang] = useState("mr");\n  const [translations, setTranslations] = useState<Translation[]>([]);\n  const [translationMessage, setTranslationMessage] = useState("");\n  const [translationBusy, setTranslationBusy] = useState(false);\n  const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<Verse[]>([]);
   const [searchMessage, setSearchMessage] = useState("");
   const [searchBusy, setSearchBusy] = useState(false);
@@ -78,7 +78,7 @@ export default function Home() {
     finally { setSearchBusy(false); }
   }
 
-  function verseCard(v: Verse) {
+  async function loadTranslation(verseId: string, lang: string) {\n    setSelectedVerse(verseId);\n    setTranslationLang(lang);\n    setTranslations([]);\n    setTranslationMessage("");\n    setTranslationBusy(true);\n    try {\n      const res = await fetch(`/api/translations?verse_id=${encodeURIComponent(verseId)}&lang=${lang}`);\n      const data = await res.json();\n      if (!res.ok) throw new Error("Translation unavailable");\n      setTranslations(Array.isArray(data.translations) ? data.translations : []);\n      setTranslationMessage(data.message || "");\n    } catch { setTranslationMessage("अर्थ लोड करता आला नाही."); }\n    finally { setTranslationBusy(false); }\n  }\n\n  function verseCard(v: Verse) {
     return <article className="verse-card" key={v.id}>
       <h4>अध्याय {v.chapter}, श्लोक {v.verse}</h4>
       <p className="verse-text">{v.sanskrit}</p>
