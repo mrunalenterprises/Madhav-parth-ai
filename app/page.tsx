@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 type Chapter = { number: number; name_sa: string; expected_verses: number };
-type CorpusStatus = { importedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
+type VerifiedVerse = { id: string; chapter: number; verse: number; sanskrit: string; source_reference: string };\ntype CorpusStatus = { importedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
 const EXAMPLES = [
   "मी खूप मेहनत करतो, पण यश मिळत नाही. काय करू?",
   "माझ्या मनात सतत भीती आणि चिंता असते.",
@@ -15,7 +15,7 @@ export default function Home() {
   const [response, setResponse] = useState("");
   const [busy, setBusy] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [corpus, setCorpus] = useState<CorpusStatus | null>(null);
+  const [corpus, setCorpus] = useState<CorpusStatus | null>(null);\n  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);\n  const [verses, setVerses] = useState<VerifiedVerse[]>([]);\n  const [verseMessage, setVerseMessage] = useState("");\n  const [versesBusy, setVersesBusy] = useState(false);
   useEffect(() => {
     fetch("/api/chapters").then(r => r.ok ? r.json() : null)
       .then(d => { if (Array.isArray(d?.chapters)) setChapters(d.chapters); }).catch(() => {});
@@ -23,7 +23,7 @@ export default function Home() {
       .then(d => { if (typeof d?.importedVerses === "number") setCorpus(d); }).catch(() => {});
   }, []);
 
-  async function ask() {
+  async function browseChapter(chapter: number) {\n    setSelectedChapter(chapter);\n    setVerses([]);\n    setVerseMessage("");\n    setVersesBusy(true);\n    try {\n      const res = await fetch(`/api/verses?chapter=${chapter}`);\n      const data = await res.json();\n      if (!res.ok) throw new Error(data.message || "श्लोक उपलब्ध नाहीत.");\n      setVerses(Array.isArray(data.verses) ? data.verses : []);\n      setVerseMessage(data.message || "");\n    } catch { setVerseMessage("श्लोक लोड करता आले नाहीत. कृपया पुन्हा प्रयत्न करा."); }\n    finally { setVersesBusy(false); }\n  }\n\n  async function ask() {
     if (busy || question.trim().length < 3) return;
     setBusy(true);
     setResponse("");
@@ -66,7 +66,7 @@ export default function Home() {
     </section>
     <section className="panel">
       <h2>भगवद्गीतेचे 18 अध्याय</h2>
-      {chapters.length ? <ol>{chapters.map(c => <li key={c.number}>{c.name_sa} — {c.expected_verses} श्लोक</li>)}</ol>
+      {chapters.length ? <ol>{chapters.map(c => <li key={c.number}><button className="chapter-button" type="button" onClick={() => browseChapter(c.number)} aria-pressed={selectedChapter === c.number}>{c.name_sa} — {c.expected_verses} श्लोक</button></li>)}</ol>
         : <p className="muted">अध्यायांची यादी सध्या उपलब्ध नाही.</p>}
     </section>
     <p className="muted">हे आध्यात्मिक मार्गदर्शन आहे; वैद्यकीय किंवा आपत्कालीन मदतीचा पर्याय नाही.</p>
