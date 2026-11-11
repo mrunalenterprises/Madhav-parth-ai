@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { detectTopic } from "../../../lib/guidance";
 import { searchTerms } from "../../../lib/retrieval";
+import { detectSafetyRoute, safetyMessage } from "../../../lib/safety";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -12,6 +13,11 @@ export async function POST(request: Request) {
   if (typeof question !== "string" || question.trim().length < 3 || question.length > 2000) {
     return NextResponse.json({ message: "कृपया 3 ते 2000 अक्षरांत प्रश्न लिहा." }, { status: 400 });
   }
+  const safety = detectSafetyRoute(question);
+  if (safety) return NextResponse.json({
+    topic: "तातडीची मदत", message: safetyMessage(safety), citations: [],
+    status: "safety_escalation"
+  }, { headers: { "Cache-Control": "no-store" } });
   const topic = detectTopic(question);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
