@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 
 type Chapter = { number: number; name_sa: string; expected_verses: number };
-type VerifiedVerse = { id: string; chapter: number; verse: number; sanskrit: string; source_reference: string };\ntype CorpusStatus = { importedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
+type Verse = { id: string; chapter: number; verse: number; sanskrit: string; source_reference: string };
+type CorpusStatus = { expectedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
 const EXAMPLES = [
   "मी खूप मेहनत करतो, पण यश मिळत नाही. काय करू?",
   "माझ्या मनात सतत भीती आणि चिंता असते.",
@@ -12,31 +13,77 @@ const EXAMPLES = [
 
 export default function Home() {
   const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [answer, setAnswer] = useState("");
+  const [asking, setAsking] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [corpus, setCorpus] = useState<CorpusStatus | null>(null);\n  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);\n  const [verses, setVerses] = useState<VerifiedVerse[]>([]);\n  const [verseMessage, setVerseMessage] = useState("");\n  const [versesBusy, setVersesBusy] = useState(false);
+  const [corpus, setCorpus] = useState<CorpusStatus | null>(null);
+  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const [chapterVerses, setChapterVerses] = useState<Verse[]>([]);
+  const [chapterMessage, setChapterMessage] = useState("");
+  const [chapterBusy, setChapterBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<Verse[]>([]);
+  const [searchMessage, setSearchMessage] = useState("");
+  const [searchBusy, setSearchBusy] = useState(false);
+
   useEffect(() => {
     fetch("/api/chapters").then(r => r.ok ? r.json() : null)
       .then(d => { if (Array.isArray(d?.chapters)) setChapters(d.chapters); }).catch(() => {});
     fetch("/api/corpus-status").then(r => r.ok ? r.json() : null)
-      .then(d => { if (typeof d?.importedVerses === "number") setCorpus(d); }).catch(() => {});
+      .then(d => { if (typeof d?.expectedVerses === "number") setCorpus(d); }).catch(() => {});
   }, []);
 
-  async function browseChapter(chapter: number) {\n    setSelectedChapter(chapter);\n    setVerses([]);\n    setVerseMessage("");\n    setVersesBusy(true);\n    try {\n      const res = await fetch(`/api/verses?chapter=${chapter}`);\n      const data = await res.json();\n      if (!res.ok) throw new Error(data.message || "श्लोक उपलब्ध नाहीत.");\n      setVerses(Array.isArray(data.verses) ? data.verses : []);\n      setVerseMessage(data.message || "");\n    } catch { setVerseMessage("श्लोक लोड करता आले नाहीत. कृपया पुन्हा प्रयत्न करा."); }\n    finally { setVersesBusy(false); }\n  }\n\n  async function ask() {
-    if (busy || question.trim().length < 3) return;
-    setBusy(true);
-    setResponse("");
+  async function ask() {
+    if (asking || question.trim().length < 3) return;
+    setAsking(true);
+    setAnswer("");
     try {
       const res = await fetch("/api/ask", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ question: question.trim() })
       });
       const data = await res.json();
-      setResponse(data.message || "कृपया पुन्हा प्रयत्न करा.");
-    } catch {
-      setResponse("सेवेशी संपर्क झाला नाही. कृपया पुन्हा प्रयत्न करा.");
-    } finally { setBusy(false); }
+      setAnswer(data.message || "कृपया पुन्हा प्रयत्न करा.");
+    } catch { setAnswer("सेवेशी संपर्क झाला नाही. कृपया पुन्हा प्रयत्न करा."); }
+    finally { setAsking(false); }
+  }
+
+  async function browseChapter(chapter: number) {
+    setSelectedChapter(chapter);
+    setChapterVerses([]);
+    setChapterMessage("");
+    setChapterBusy(true);
+    try {
+      const res = await fetch(`/api/verses?chapter=${chapter}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error("Chapter unavailable");
+      setChapterVerses(Array.isArray(data.verses) ? data.verses : []);
+      setChapterMessage(data.message || "");
+    } catch { setChapterMessage("श्लोक लोड करता आले नाहीत. कृपया पुन्हा प्रयत्न करा."); }
+    finally { setChapterBusy(false); }
+  }
+
+  async function searchVerses() {
+    if (searchBusy || search.trim().length < 2) return;
+    setSearchBusy(true);
+    setSearchResults([]);
+    setSearchMessage("");
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(search.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error("Search unavailable");
+      setSearchResults(Array.isArray(data.results) ? data.results : []);
+      setSearchMessage(data.message || "");
+    } catch { setSearchMessage("शोध करता आला नाही. कृपया पुन्हा प्रयत्न करा."); }
+    finally { setSearchBusy(false); }
+  }
+
+  function verseCard(v: Verse) {
+    return <article className="verse-card" key={v.id}>
+      <h4>अध्याय {v.chapter}, श्लोक {v.verse}</h4>
+      <p className="verse-text">{v.sanskrit}</p>
+      <p className="muted">स्रोत: {v.source_reference}</p>
+    </article>;
   }
 
   return <main>
@@ -46,28 +93,53 @@ export default function Home() {
     <section className="panel">
       <h2>हे पार्थ, मनातील प्रश्न सांग</h2>
       <label htmlFor="question" className="muted">तुमचा प्रश्न</label>
-      <textarea id="question" maxLength={2000} value={question}
-        onChange={e => setQuestion(e.target.value)}
+      <textarea id="question" maxLength={2000} value={question} onChange={e => setQuestion(e.target.value)}
         placeholder="माधव, मला एक प्रश्न आहे..." />
       <p className="muted">उदाहरणार्थ:</p>
       <div className="examples">{EXAMPLES.map(example =>
         <button className="example" key={example} type="button" onClick={() => setQuestion(example)}>{example}</button>
       )}</div>
-      <p><button type="button" onClick={ask} disabled={busy || question.trim().length < 3}>
-        {busy ? "कृपया थांबा..." : "माधवाला विचारा"}
+      <p><button type="button" onClick={ask} disabled={asking || question.trim().length < 3}>
+        {asking ? "कृपया थांबा..." : "माधवाला विचारा"}
       </button></p>
+      {answer && <div className="answer" role="status" aria-live="polite">{answer}</div>}
     </section>
-    {response && <section className="panel answer" role="status" aria-live="polite">{response}</section>}
     <section className="panel">
       <h2>श्लोक पडताळणी स्थिती</h2>
-      {corpus ? <p>आयात नोंदी: {corpus.importedVerses} • प्रमाणित श्लोक: {corpus.editoriallyVerifiedVerses} • प्रमाणित भाषांतरे: {corpus.verifiedTranslations}</p>
+      {corpus
+        ? <p>अपेक्षित श्लोक: {corpus.expectedVerses} • प्रमाणित श्लोक: {corpus.editoriallyVerifiedVerses} • प्रमाणित भाषांतरे: {corpus.verifiedTranslations}</p>
         : <p className="muted">पडताळणीची स्थिती सध्या उपलब्ध नाही.</p>}
-      <p className="muted">प्रमाणित संदर्भ उपलब्ध होईपर्यंत AI कोणतेही अप्रमाणित श्लोक दाखवणार नाही.</p>
+      <p className="muted">अप्रमाणित श्लोक सार्वजनिकपणे दाखवले जाणार नाहीत. ही संख्या डेटाबेसमधील आयात नोंदींची संख्या नाही.</p>
+    </section>
+    <section className="panel">
+      <h2>संस्कृत श्लोक शोधा</h2>
+      <form onSubmit={e => { e.preventDefault(); void searchVerses(); }}>
+        <label htmlFor="verse-search" className="muted">संस्कृत शब्द (किमान 2 अक्षरे)</label>
+        <div className="search-row">
+          <input id="verse-search" type="search" minLength={2} maxLength={100} value={search}
+            onChange={e => setSearch(e.target.value)} placeholder="उदा. कर्म" />
+          <button type="submit" disabled={searchBusy || search.trim().length < 2}>
+            {searchBusy ? "शोध सुरू..." : "शोधा"}
+          </button>
+        </div>
+      </form>
+      <div aria-live="polite">{searchMessage && <p className="muted">{searchMessage}</p>}{searchResults.map(verseCard)}</div>
     </section>
     <section className="panel">
       <h2>भगवद्गीतेचे 18 अध्याय</h2>
-      {chapters.length ? <ol>{chapters.map(c => <li key={c.number}><button className="chapter-button" type="button" onClick={() => browseChapter(c.number)} aria-pressed={selectedChapter === c.number}>{c.name_sa} — {c.expected_verses} श्लोक</button></li>)}</ol>
-        : <p className="muted">अध्यायांची यादी सध्या उपलब्ध नाही.</p>}
+      {chapters.length ? <ol>{chapters.map(c =>
+        <li key={c.number}><button className="chapter-button" type="button"
+          onClick={() => void browseChapter(c.number)} aria-pressed={selectedChapter === c.number}>
+          {c.name_sa} — {c.expected_verses} श्लोक
+        </button></li>
+      )}</ol> : <p className="muted">अध्यायांची यादी सध्या उपलब्ध नाही.</p>}
+      {selectedChapter !== null && <div className="chapter-results" aria-live="polite">
+        <h3>अध्याय {selectedChapter} — प्रमाणित श्लोक</h3>
+        {chapterBusy ? <p>श्लोक लोड होत आहेत...</p> : <>
+          {chapterMessage && <p className="muted">{chapterMessage}</p>}
+          {chapterVerses.map(verseCard)}
+        </>}
+      </div>}
     </section>
     <p className="muted">हे आध्यात्मिक मार्गदर्शन आहे; वैद्यकीय किंवा आपत्कालीन मदतीचा पर्याय नाही.</p>
   </main>;
