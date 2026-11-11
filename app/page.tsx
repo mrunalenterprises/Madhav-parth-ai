@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 type Chapter = { number: number; name_sa: string; expected_verses: number };
 type Verse = { id: string; chapter: number; verse: number; sanskrit: string; source_reference: string };
-type Translation = { content: string; lang: string; source_id: string; license: string };
+type AnswerCitation = { verseId: string; chapter: number; verse: number; sanskrit: string; sourceReference: string; translation: string; language: string; translationSource: string; translationLicense: string };\ntype Translation = { content: string; lang: string; source_id: string; license: string };
 type CorpusStatus = { expectedVerses: number; editoriallyVerifiedVerses: number; verifiedTranslations: number; readyForCitedAnswers: boolean };
 const EXAMPLES = [
   "मी खूप मेहनत करतो, पण यश मिळत नाही. काय करू?",
@@ -14,7 +14,7 @@ const EXAMPLES = [
 
 export default function Home() {
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState("");\n  const [answerCitations, setAnswerCitations] = useState<AnswerCitation[]>([]);
   const [asking, setAsking] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [corpus, setCorpus] = useState<CorpusStatus | null>(null);
@@ -49,7 +49,7 @@ export default function Home() {
         body: JSON.stringify({ question: question.trim() })
       });
       const data = await res.json();
-      setAnswer(data.message || "कृपया पुन्हा प्रयत्न करा.");
+      setAnswer(data.message || "कृपया पुन्हा प्रयत्न करा.");\n      setAnswerCitations(Array.isArray(data.citations) ? data.citations : []);
     } catch { setAnswer("सेवेशी संपर्क झाला नाही. कृपया पुन्हा प्रयत्न करा."); }
     finally { setAsking(false); }
   }
@@ -124,7 +124,7 @@ export default function Home() {
       <p><button type="button" onClick={ask} disabled={asking || question.trim().length < 3}>
         {asking ? "कृपया थांबा..." : "माधवाला विचारा"}
       </button></p>
-      {answer && <div className="answer" role="status" aria-live="polite">{answer}</div>}
+      {answer && <div className="answer" role="status" aria-live="polite">\n        <p>{answer}</p>\n        {answerCitations.map(c => <article className="verse-card" key={`${c.verseId}-${c.language}`}>\n          <h3>भगवद्गीता {c.chapter}.{c.verse}</h3>\n          <p className="verse-text">{c.sanskrit}</p>\n          <p>{c.translation}</p>\n          <p className="muted">संस्कृत स्रोत: {c.sourceReference} • भाषांतर स्रोत: {c.translationSource} • भाषा: {c.language} • परवाना: {c.translationLicense}</p>\n        </article>)}\n      </div>}
     </section>
     <section className="panel">
       <h2>श्लोक पडताळणी स्थिती</h2>
