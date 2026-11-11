@@ -24,3 +24,6 @@ jobs:
         run: npx tsc --noEmit
       - name: Production build
         run: npm run build
+
+      - name: API smoke checks
+        run: bash scripts/smoke_api.sh
