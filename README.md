@@ -43,7 +43,7 @@ Generate a **blank**, 700-row CSV with every decision set to PENDING (the comman
 python scripts/create_review_worksheet.py data/staging/editorial_review.csv
 ```
 
-Review the output manually. Do **not** import its PENDING rows as approvals. For authorized read-only database audits, run `scripts/audit_corpus.sql` against the project.
+Review the output manually. Do **not** import its PENDING rows as approvals. Audit completed review decisions with `python scripts/audit_editorial_reviews.py data/staging/editorial_review.csv`. The audit rejects duplicate verse IDs, unsupported decisions, approved Sanskrit lacking reviewer/source/date and translations approved without source/license or an approved parent verse. This is a **preflight audit**, not a substitute for human review and it does not change database records. For authorized read-only database audits, run `scripts/audit_corpus.sql` against the project.
 
 ## Scripture editorial workflow
 
