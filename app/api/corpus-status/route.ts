@@ -19,7 +19,7 @@ export async function GET() {
     expectedVerses,
     editoriallyVerifiedVerses: verified.count ?? 0,
     verifiedTranslations: translations.count ?? 0,
-    readyForCitedAnswers: (verified.count ?? 0) > 0 && (translations.count ?? 0) > 0,
+    readyForCitedAnswers: false, // Cited retrieval and editorial topic mapping are not implemented yet.
     note: "Expected verse count comes from chapter metadata, not hidden imported rows. Hash checks do not establish authenticity."
   }, { headers: { "Cache-Control": "no-store" } });
 }
